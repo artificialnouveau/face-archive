@@ -24,10 +24,7 @@ The scripts require Python 3 and the following packages:
 Install them using pip:
 
 ```bash
-pip install opencv-python
-pip install face_recognition
-pip install numpy
-pip install pillow
+pip install opencv-python face_recognition pillow
 ```
 
 You should also have a TTF (TrueType Font) available for writing the timestamp. The scripts assume the `DejaVuSans-Bold.ttf` font file is located at `/usr/share/fonts/truetype/dejavu/`. If this is not the case, adjust the path accordingly in the scripts.
