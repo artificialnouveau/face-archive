@@ -25,6 +25,7 @@ def save_face(face_image):
 
     face_image_pil.save(img_path)
 
+
 def process_frame(frame):
     # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
     rgb_frame = frame[:, :, ::-1]
