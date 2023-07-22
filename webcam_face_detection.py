@@ -20,7 +20,6 @@ def save_face(face_image):
     # Save the image
     face_image_pil = Image.fromarray(face_image)
     draw = ImageDraw.Draw(face_image_pil)
-    font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 15)
     draw.rectangle(((0, face_image.shape[0] - 30), (face_image.shape[1], face_image.shape[0])), fill="black")
     draw.text((10, face_image.shape[0] - 30), timestamp_str, font=font, fill=(255, 255, 255, 128))
 
