@@ -1,5 +1,9 @@
 # Face Detection and Cropping from Webcam and Video Files
 
+## Author
+Artificial Nouveau
+
+## Objective
 This repository contains two Python scripts that use OpenCV, dlib, and the face_recognition library to detect faces from a webcam feed or video file. The detected faces are then cropped, timestamped, and saved in a folder named after the current date. At the end of the process, all faces are combined into a single image.
 
 ## Prerequisites
@@ -29,7 +33,7 @@ Before running the script `video_face_detection.py`, replace the `'video.mp4'` p
 
 Run the script with `python video_face_detection.py`. The script will read the video file frame by frame and detect faces, just like the webcam script. Detected faces will be saved in a new directory named after the current date. At the end, a single image named `<video_filename>_all_faces.png` containing all detected faces will be saved in the directory.
 
-###Optional: YouTube Video Downloader
+### Optional: YouTube Video Downloader
 
 This repository contains a Python script to download YouTube videos based on their URLs.
 
