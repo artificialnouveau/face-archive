@@ -29,6 +29,28 @@ Before running the script `video_face_detection.py`, replace the `'video.mp4'` p
 
 Run the script with `python video_face_detection.py`. The script will read the video file frame by frame and detect faces, just like the webcam script. Detected faces will be saved in a new directory named after the current date. At the end, a single image named `<video_filename>_all_faces.png` containing all detected faces will be saved in the directory.
 
+###Optional: YouTube Video Downloader
+
+This repository contains a Python script to download YouTube videos based on their URLs.
+
+The script uses the `pytube` library to fetch and download the YouTube video. The video is downloaded in its highest available resolution.
+
+## Prerequisites
+
+```sh
+pip install pytube
+```
+
+## Usage
+
+To use the script, run it from the command line and pass the URL of the YouTube video you want to download as the first command line argument, and the output path as the second command line argument:
+
+```sh
+python download_video.py 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' '/path/to/download/directory'  # replace with your youtube link and desired download path
+```
+
+The video will be downloaded to the directory specified by the output path argument.
+
 ## Important Note
 
 The face recognition used in these scripts is not 100% accurate and can have a harder time recognizing the same person in different lighting conditions, from different angles, with different facial expressions, etc. These scripts are intended for educational and personal use and may not be suitable for high-accuracy face recognition requirements.
