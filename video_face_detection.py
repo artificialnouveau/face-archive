@@ -3,7 +3,7 @@ import face_recognition
 import datetime
 import os
 import numpy as np
-from PIL import ImageDraw
+from PIL import Image, ImageDraw
 from tqdm import tqdm
 
 def process_frame(frame):
