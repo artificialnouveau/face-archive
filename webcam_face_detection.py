@@ -5,6 +5,7 @@ import os
 import numpy as np
 import datetime
 from PIL import Image, ImageDraw, ImageFont
+from tqdm import tqdm
 
 # Declare output directory as a global variable
 output_dir = ""
@@ -24,7 +25,6 @@ def save_face(face_image):
     draw.text((10, face_image.shape[0] - 30), timestamp_str, font=font, fill=(255, 255, 255, 128))
 
     face_image_pil.save(img_path)
-
 
 def process_frame(frame):
     # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
@@ -47,11 +47,16 @@ def main(output_directory):
     output_dir = output_directory
 
     video_capture = cv2.VideoCapture(0)
+    pbar = tqdm(total=int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT)))
 
     while True:
         # Grab a single frame of video
         ret, frame = video_capture.read()
+        if not ret:
+            break
+
         process_frame(frame)
+        pbar.update(1)
 
         # Display the resulting image
         cv2.imshow('Video', frame)
@@ -59,6 +64,8 @@ def main(output_directory):
         # Hit 'q' on the keyboard to quit!
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+
+    pbar.close()
 
     # Release handle to the webcam
     video_capture.release()
