@@ -1,74 +1,103 @@
-import sys
 import cv2
 import face_recognition
-import os
 import numpy as np
-import datetime
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
+from datetime import datetime
+import argparse
 from tqdm import tqdm
+from scipy.spatial import distance
 
-# Declare output directory as a global variable
-output_dir = ""
-known_face_encodings = []
+FACE_HEIGHT = 100
+FACE_WIDTH = 100
+THRESHOLD = 0.6
 
-def save_face(face_image):
-    global output_dir
-    now = datetime.datetime.now()
-    timestamp_str = now.strftime("%Y-%m-%d %H:%M:%S")
-    img_path = os.path.join(output_dir, timestamp_str + '.jpg')
+def save_face(image, top, right, bottom, left, output_dir, timestamp):
+    face_image = image[top:bottom, left:right]
+    pil_image = Image.fromarray(face_image)
 
-    # Save the image
-    face_image_pil = Image.fromarray(face_image)
-    draw = ImageDraw.Draw(face_image_pil)
-    draw.rectangle(((0, face_image.shape[0] - 30), (face_image.shape[1], face_image.shape[0])), fill="black")
-    draw.text((10, face_image.shape[0] - 30), timestamp_str, font=font, fill=(255, 255, 255, 128))
+    background = Image.new('RGB', (pil_image.width, pil_image.height + 30), 'black')
+    background.paste(pil_image, (0,0))
 
-    face_image_pil.save(img_path)
+    draw = ImageDraw.Draw(background)
+    draw.text((0, pil_image.height), timestamp, fill="white")
 
-def process_frame(frame):
-    # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-    rgb_frame = frame[:, :, ::-1]
+    filename = f"{output_dir}/{timestamp}.jpg"
+    background.save(filename)
 
-    # Find all the faces and face enqcodings in the current frame of video
-    face_locations = face_recognition.face_locations(rgb_frame)
-    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+    return face_image, timestamp
 
-    for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-        # See if the face is a match for the known face(s)
-        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+def merge_faces(face_images, face_timestamps, output_dir):
+    n = len(face_images)
+    ncols = 5
+    nrows = n // ncols
+    if n % ncols != 0:
+        nrows += 1
 
-        if True not in matches:
-            known_face_encodings.append(face_encoding)
-            save_face(frame[top:bottom, left:right])
+    merged_image = np.zeros((nrows * (FACE_HEIGHT+30), ncols * FACE_WIDTH, 3), dtype=np.uint8)
+    merged_image_timestamps = np.zeros((nrows * (FACE_HEIGHT+30), ncols * FACE_WIDTH, 3), dtype=np.uint8)
 
-def main(output_directory):
-    global output_dir
-    output_dir = output_directory
+    for i, (face_image, timestamp) in enumerate(zip(face_images, face_timestamps)):
+        row = i // ncols
+        col = i % ncols
 
+        face_image_resized = cv2.resize(face_image, (FACE_WIDTH, FACE_HEIGHT))
+        merged_image[row * (FACE_HEIGHT+30) : (row * (FACE_HEIGHT+30)) + FACE_HEIGHT, col * FACE_WIDTH : (col + 1) * FACE_WIDTH] = face_image_resized
+        merged_image_timestamps[row * (FACE_HEIGHT+30) : (row * (FACE_HEIGHT+30)) + FACE_HEIGHT, col * FACE_WIDTH : (col + 1) * FACE_WIDTH] = face_image_resized
+
+        cv2.putText(merged_image_timestamps, timestamp, (col * FACE_WIDTH, (row * (FACE_HEIGHT+30)) + FACE_HEIGHT + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
+
+    cv2.imwrite(f"{output_dir}/merged_faces.jpg", cv2.cvtColor(merged_image, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(f"{output_dir}/merged_faces_timestamps.jpg", cv2.cvtColor(merged_image_timestamps, cv2.COLOR_RGB2BGR))
+
+def is_new_face(face_encoding, known_face_encodings):
+    if len(known_face_encodings) == 0:
+        return True
+
+    face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+    return np.min(face_distances) > THRESHOLD
+
+def main(output_dir):
     video_capture = cv2.VideoCapture(0)
-    pbar = tqdm(total=int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT)))
+    known_face_encodings = []
+    face_images = []
+    face_timestamps = []
+    frame_number = 0
+
+    print("Press 'q' to stop webcam and process faces.")
 
     while True:
-        # Grab a single frame of video
         ret, frame = video_capture.read()
         if not ret:
             break
 
-        process_frame(frame)
-        pbar.update(1)
+        frame_number += 1
 
-        # Display the resulting image
-        cv2.imshow('Video', frame)
+        rgb_frame = frame[:, :, ::-1]
+        face_locations = face_recognition.face_locations(rgb_frame)
+        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-        # Hit 'q' on the keyboard to quit!
+        for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+            if is_new_face(face_encoding, known_face_encodings):
+                known_face_encodings.append(face_encoding)
+
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+                face_image, timestamp = save_face(rgb_frame, top, right, bottom, left, output_dir, timestamp)
+                face_images.append(face_image)
+                face_timestamps.append(timestamp)
+
+        cv2.imshow('Webcam', frame)
+
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    pbar.close()
+    merge_faces(face_images, face_timestamps, output_dir)
 
-    # Release handle to the webcam
     video_capture.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    parser = argparse.ArgumentParser(description="Extract and save unique faces from a video")
+    parser.add_argument("output_dir", help="Directory to save the cropped faces")
+    args = parser.parse_args()
+
+    main(args.output_dir)
