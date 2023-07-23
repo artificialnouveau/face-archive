@@ -7,8 +7,8 @@ import argparse
 from tqdm import tqdm
 from scipy.spatial import distance
 
-FACE_HEIGHT = 100
-FACE_WIDTH = 100
+FACE_HEIGHT = 200
+FACE_WIDTH = 200
 THRESHOLD = 0.6
 
 def save_face(image, top, right, bottom, left, output_dir, timestamp):
