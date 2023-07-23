@@ -32,8 +32,8 @@ def save_face(image, top, right, bottom, left, output_dir, timestamp):
     draw.text((0, pil_image.height), timestamp, fill="white")
 
     # Save the new image
-    filename = f"{output_dir}/{timestamp}.jpg"
-    background.save(filename)
+    # filename = f"{output_dir}/{timestamp}.jpg"
+    # background.save(filename)
 
     return face_image
 
