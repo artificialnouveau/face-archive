@@ -21,8 +21,8 @@ def save_face(image, top, right, bottom, left, output_dir, timestamp):
     draw = ImageDraw.Draw(background)
     draw.text((0, pil_image.height), timestamp, fill="white")
 
-    filename = f"{output_dir}/{timestamp}.jpg"
-    background.save(filename)
+    # filename = f"{output_dir}/{timestamp}.jpg"
+    # background.save(filename)
 
     return face_image, timestamp
 
@@ -48,6 +48,16 @@ def merge_faces(face_images, face_timestamps, output_dir):
 
     cv2.imwrite(f"{output_dir}/merged_faces.jpg", cv2.cvtColor(merged_image, cv2.COLOR_RGB2BGR))
     cv2.imwrite(f"{output_dir}/merged_faces_timestamps.jpg", cv2.cvtColor(merged_image_timestamps, cv2.COLOR_RGB2BGR))
+
+def average_face(face_images, output_dir):
+    avg_image = np.zeros((FACE_HEIGHT, FACE_WIDTH, 3))
+
+    for face_image in face_images:
+        resized_image = cv2.resize(face_image, (FACE_WIDTH, FACE_HEIGHT))
+        avg_image += resized_image
+
+    avg_image = avg_image / len(face_images)
+    cv2.imwrite(f"{output_dir}/average_face.jpg", cv2.cvtColor(avg_image.astype('uint8'), cv2.COLOR_RGB2BGR))
 
 def is_new_face(face_encoding, known_face_encodings):
     if len(known_face_encodings) == 0:
@@ -91,6 +101,7 @@ def main(output_dir):
             break
 
     merge_faces(face_images, face_timestamps, output_dir)
+    average_face(face_images, output_dir)
 
     video_capture.release()
     cv2.destroyAllWindows()
