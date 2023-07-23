@@ -54,6 +54,18 @@ The scripts also generate three special images in the output directory:
 - `merged_faces_timestamps.jpg` which is the same as `merged_faces.jpg` but with the timestamp written under each face.
 - `average_face.jpg` which is an image of the average of all detected faces.
 
+Example of `merged_faces.jpg`
+![plot](https://github.com/artificialnouveau/face-archive/blob/main/merged_faces.jpg)
+
+
+Example of `merged_faces_timestamps.jpg`
+![plot](https://github.com/artificialnouveau/face-archive/blob/main/merged_faces_timestamps.jpg)
+
+
+Example of `average_face.jpg`
+![plot](https://github.com/artificialnouveau/face-archive/blob/main/average_face.jpg)
+
+
 ## Note
 These scripts assume the faces in the input video or webcam feed are of different individuals. Faces of the same individual appearing multiple times are considered duplicates and only the first occurrence is processed.
 
