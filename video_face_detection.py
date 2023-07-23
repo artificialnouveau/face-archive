@@ -9,55 +9,51 @@ from scipy.spatial import distance
 from skimage.io import imread_collection
 import os
 
-FACE_HEIGHT = 100
-FACE_WIDTH = 100
+FACE_HEIGHT = 200
+FACE_WIDTH = 200
 THRESHOLD = 0.6
 
 def save_face(image, top, right, bottom, left, output_dir, timestamp):
     face_image = image[top:bottom, left:right]
-
-    # Convert to PIL Image
     pil_image = Image.fromarray(face_image)
 
-    # Create a new image with black background
     background = Image.new('RGB', (pil_image.width, pil_image.height + 30), 'black')
-
-    # Paste the original image into the background image
     background.paste(pil_image, (0,0))
 
-    # Prepare to draw on the new image
     draw = ImageDraw.Draw(background)
-
-    # Write timestamp on the new black area at the bottom of the image
     draw.text((0, pil_image.height), timestamp, fill="white")
 
-    # Save the new image
-    # filename = f"{output_dir}/{timestamp}.jpg"
-    # background.save(filename)
+    filename = f"{output_dir}/{timestamp}.jpg"
+    background.save(filename)
 
-    return face_image
+    return face_image, timestamp
 
-def merge_faces(face_images, output_dir):
+def merge_faces(face_images, face_timestamps, output_dir):
     n = len(face_images)
     ncols = 5
     nrows = n // ncols
     if n % ncols != 0:
         nrows += 1
 
-    merged_image = np.zeros((nrows * FACE_HEIGHT, ncols * FACE_WIDTH, 3), dtype=np.uint8)
+    merged_image = np.zeros((nrows * (FACE_HEIGHT+30), ncols * FACE_WIDTH, 3), dtype=np.uint8)
+    merged_image_timestamps = np.zeros((nrows * (FACE_HEIGHT+30), ncols * FACE_WIDTH, 3), dtype=np.uint8)
 
-    for i, face_image in enumerate(face_images):
+    for i, (face_image, timestamp) in enumerate(zip(face_images, face_timestamps)):
         row = i // ncols
         col = i % ncols
 
         face_image_resized = cv2.resize(face_image, (FACE_WIDTH, FACE_HEIGHT))
-        merged_image[row * FACE_HEIGHT : (row + 1) * FACE_HEIGHT, col * FACE_WIDTH : (col + 1) * FACE_WIDTH] = face_image_resized
+        merged_image[row * (FACE_HEIGHT+30) : (row * (FACE_HEIGHT+30)) + FACE_HEIGHT, col * FACE_WIDTH : (col + 1) * FACE_WIDTH] = face_image_resized
+        merged_image_timestamps[row * (FACE_HEIGHT+30) : (row * (FACE_HEIGHT+30)) + FACE_HEIGHT, col * FACE_WIDTH : (col + 1) * FACE_WIDTH] = face_image_resized
 
-    merged_image_bgr = cv2.cvtColor(merged_image, cv2.COLOR_RGB2BGR)
-    cv2.imwrite(f"{output_dir}/merged_faces.jpg", merged_image_bgr)
+        cv2.putText(merged_image_timestamps, timestamp, (col * FACE_WIDTH, (row * (FACE_HEIGHT+30)) + FACE_HEIGHT + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
 
-    merged_image = cv2.cvtColor(merged_image_bgr, cv2.COLOR_BGR2RGB)
-    return merged_image
+    cv2.imwrite(f"{output_dir}/merged_faces.jpg", cv2.cvtColor(merged_image, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(f"{output_dir}/merged_faces_timestamps.jpg", cv2.cvtColor(merged_image_timestamps, cv2.COLOR_RGB2BGR))
+
+def average_face(face_images, output_dir):
+    avg_face = np.mean(face_images, axis=0).astype(np.uint8)
+    cv2.imwrite(f"{output_dir}/average_face.jpg", cv2.cvtColor(avg_face, cv2.COLOR_RGB2BGR))
 
 def is_new_face(face_encoding, known_face_encodings):
     if len(known_face_encodings) == 0:
@@ -70,6 +66,7 @@ def main(video_path, output_dir):
     video_capture = cv2.VideoCapture(video_path)
     known_face_encodings = []
     face_images = []
+    face_timestamps = []
     frame_number = 0
 
     length = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -91,12 +88,15 @@ def main(video_path, output_dir):
                     known_face_encodings.append(face_encoding)
 
                     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
-                    face_image = save_face(rgb_frame, top, right, bottom, left, output_dir, timestamp)
+                    face_image, timestamp = save_face(rgb_frame, top, right, bottom, left, output_dir, timestamp)
                     face_images.append(face_image)
+                    face_timestamps.append(timestamp)
 
             pbar.update(1)
 
-    merge_faces(face_images, output_dir)
+    merge_faces(face_images, face_timestamps, output_dir)
+    average_face(face_images, output_dir)
+
     video_capture.release()
 
 if __name__ == "__main__":
